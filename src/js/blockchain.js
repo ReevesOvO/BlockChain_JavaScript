@@ -4,8 +4,6 @@
  description：implement block chain by javascript.
  */
 
-// 从类库crypto-js中引入sha256
-const SHA256 = require("sha256");
 /*
  description: 区块类
  params: block_id 区块编号
@@ -29,7 +27,8 @@ class Block {
 	 description: 计算当前区块hash值
 	 */
 	calculateHash() {
-		return SHA256(this.block_id + this.previousHash + this.timestamp
+		// 使用类库crypto-js中的sha256加密算法
+		return CryptoJS.SHA256(this.block_id + this.previousHash + this.timestamp
 			+ JSON.stringify(this.data)).toString();
 	}
 }
@@ -46,7 +45,7 @@ class BlockChain {
 
 	// 创造一个创始区块
 	createGenesisBlock(){
-		return new Block(0,"04/06/2018","Genesis block","0");
+		return new Block(0,"04/06/2018","first block","0");
 	}
 
 	// 取到上一个区块
@@ -69,8 +68,8 @@ class BlockChain {
 	 */
 	isChainValid(){
 		for(let i = 1; i < this.chain.length ; i++){
-			currentBlock = this.chain[i];
-			previousBlock = this.chain[i-1];
+			var currentBlock = this.chain[i];
+			var previousBlock = this.chain[i-1];
 
 			// 当前区块的hash值不一致
 			if(currentBlock.hash !== currentBlock.calculateHash()){
@@ -86,8 +85,14 @@ class BlockChain {
 	}
 }
 
-	let jsCoin = new BlockChain();
-	jsCoin.addBlock(new Block(1,"04/06/2018",{ name : "wangx" }));
-	jsCoin.addBlock(new Block(2,"05/06/2018",{ name : "chenh" }));
+	// 命名为helloCoin
+	let helloCoin = new BlockChain();
+	helloCoin.addBlock(new Block(1,"04/06/2018",{ name : "wangx" }));
+	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "chenh" }));
+	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "roe" }));
+	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "xyz" }));
 
-	console.log(jsCoin);
+	// 查看区块链
+	console.log(helloCoin);
+	// 检验区块链
+	console.log(helloCoin.isChainValid());
