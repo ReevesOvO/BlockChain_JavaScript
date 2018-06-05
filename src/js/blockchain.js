@@ -11,6 +11,7 @@
  params: data 区块数据
  params: previousHash 前一区块的hash值
  params: hash 当前区块hash值
+ params: nouce 查找一个有效哈希需要的次数
  */
 
 class Block {
@@ -21,6 +22,7 @@ class Block {
 		this.data = data;
 		this.previousHash = previousHash;
 		this.hash = this.calculateHash();
+		this.nouce = 0;
 	}
 
 	/*
@@ -29,7 +31,19 @@ class Block {
 	calculateHash() {
 		// 使用类库crypto-js中的sha256加密算法
 		return CryptoJS.SHA256(this.block_id + this.previousHash + this.timestamp
-			+ JSON.stringify(this.data)).toString();
+			+ JSON.stringify(this.data) + this.nouce).toString();
+	}
+	/*
+	 * description: 如果计算得到的hash不是以 difcult个0开头的hash就一直进行计算
+	 * example: 002c7e2c59715aaa8bfa3881afde140b4515bbf9ea00b7008410cca03d1ac608
+	 * params: diffcult 难度
+	 */
+	mineBlock(diffcult){
+		while(this.hash.substring(0,diffcult) !== Array(diffcult + 1).join('0')){
+			this.nouce ++;
+			this.hash = this.calculateHash();
+		}
+		console.log("Block Mined:" + this.hash);
 	}
 }
 
@@ -41,6 +55,7 @@ class BlockChain {
 
 	constructor(){
 		this.chain = [this.createGenesisBlock()];
+		this.diffcult = 2;
 	}
 
 	// 创造一个创始区块
@@ -56,7 +71,7 @@ class BlockChain {
 	// 将新的区块添加到区块链上
 	addBlock(newBlock){
 		newBlock.previousHash = this.getLastBlock().hash;
-		newBlock.hash = newBlock.calculateHash();
+		newBlock.mineBlock(this.diffcult);
 		this.chain.push(newBlock);
 	}
 
@@ -86,10 +101,14 @@ class BlockChain {
 }
 
 	// 命名为helloCoin
-	let helloCoin = new BlockChain();
+	var helloCoin = new BlockChain();
+	console.log('block 1');
 	helloCoin.addBlock(new Block(1,"04/06/2018",{ name : "wangx" }));
+	console.log('block 2');
 	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "chenh" }));
+	console.log('block 3');
 	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "roe" }));
+	console.log('block 4');
 	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "xyz" }));
 
 	// 查看区块链
