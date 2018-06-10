@@ -16,10 +16,9 @@
 
 class Block {
 	// 构造器
-	constructor(block_id, timestamp,data,previousHash = '') {
-		this.block_id = block_id;
+	constructor(timestamp,transactions,previousHash = '') {
 		this.timestamp = timestamp;
-		this.data = data;
+		this.transactions = transactions;
 		this.previousHash = previousHash;
 		this.hash = this.calculateHash();
 		this.nouce = 0;
@@ -30,8 +29,8 @@ class Block {
 	 */
 	calculateHash() {
 		// 使用类库crypto-js中的sha256加密算法
-		return CryptoJS.SHA256(this.block_id + this.previousHash + this.timestamp
-			+ JSON.stringify(this.data) + this.nouce).toString();
+		return CryptoJS.SHA256(this.previousHash + this.timestamp
+			+ JSON.stringify(this.transactions) + this.nouce).toString();
 	}
 	/*
 	 * description: 如果计算得到的hash不是以 difcult个0开头的hash就一直进行计算
@@ -56,11 +55,17 @@ class BlockChain {
 	constructor(){
 		this.chain = [this.createGenesisBlock()];
 		this.diffcult = 2;
+
+		// 区块间存储交易的地方
+		this.pendingTransactions = [];
+
+		// 挖矿的回报
+		this.miningReward = 100;
 	}
 
 	// 创造一个创始区块
 	createGenesisBlock(){
-		return new Block(0,"04/06/2018","first block","0");
+		return new Block("04/06/2018","first block","0");
 	}
 
 	// 取到上一个区块
@@ -68,13 +73,24 @@ class BlockChain {
 		return this.chain[ this.chain.length - 1 ];
 	}
 
-	// 将新的区块添加到区块链上
-	addBlock(newBlock){
-		newBlock.previousHash = this.getLastBlock().hash;
-		newBlock.mineBlock(this.diffcult);
-		this.chain.push(newBlock);
+	// 创建一笔交易
+	createTransaction(transaction){
+		// 校验
+
+		this.pendingTransactions.push(transaction);
 	}
 
+	minePendingTransactions(miningRewardAddress){
+		let block = new Block(Date.now(),this.pendingTransactions);
+		// 挖矿
+		block.mineBlock(this.diffcult);
+
+		this.chain.push(block);
+
+		this.pendingTransactions = [
+			new Transaction(null,miningRewardAddress,this.miningReward)
+		]
+	}
 	/*
 	 * description: 检验区块链，确保没有人篡改，
  	 * 遍历链表，判断当前区块的previousHash是否等于上一区块的hash值
@@ -98,20 +114,43 @@ class BlockChain {
 		}
 		return true;
 	}
+
+	// 获取地址余额
+	getBalanceOfAddress(address){
+  let balance = 0; // you start at zero!
+
+  // 遍历每个区块以及每个区块内的交易
+  for(const block of this.chain){
+    for(const trans of block.transactions){
+
+      // 如果地址是发起方 -> 减少余额
+      if(trans.fromAddress === address){
+        balance -= trans.amount;
+      }
+
+      // 如果地址是接收方 -> 增加余额
+      if(trans.toAddress === address){
+        balance += trans.amount;
+      }
+    }
+  }
+  return balance;
+	}
 }
 
-	// 命名为helloCoin
-	var helloCoin = new BlockChain();
-	console.log('block 1');
-	helloCoin.addBlock(new Block(1,"04/06/2018",{ name : "wangx" }));
-	console.log('block 2');
-	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "chenh" }));
-	console.log('block 3');
-	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "roe" }));
-	console.log('block 4');
-	helloCoin.addBlock(new Block(2,"05/06/2018",{ name : "xyz" }));
 
-	// 查看区块链
-	console.log(helloCoin);
-	// 检验区块链
-	console.log(helloCoin.isChainValid());
+ /*
+  * description: 交易类 用来存储多笔交易
+	* params: fromAddress 卖家地址
+	*	params: toAddress 买家地址
+	*	params: amount	交易金额
+	*/
+class Transaction {
+	constructor(fromAddress,toAddress,amount){
+		this.fromAddress = fromAddress;
+		this.toAddress = toAddress;
+		this.amount = amount;
+	}
+}
+
+ //在下面 可以进行测试
